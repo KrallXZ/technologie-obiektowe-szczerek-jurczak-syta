@@ -13,6 +13,7 @@ import QueryBuilderSelect from "~/components/query-builder-select/query-builder-
 const Postgresql: NextPage = () => {
   const [connectionString, setConnectionString] = useState("");
   const [selectedTable, setSelectedTable] = useState("");
+  const [joinsCounter, setJoinsCounter] = useState(0);
 
   const schemaQuery = api.postgressql.getSchema.useQuery(connectionString, {
     enabled: Boolean(connectionString),
@@ -38,17 +39,44 @@ const Postgresql: NextPage = () => {
             setConnectionString(connectionString);
           }}
         />
-        {schemaQuery.isLoading && schemaQuery.isFetching ? <div>Loading...</div> : null}
+        {schemaQuery.isLoading && schemaQuery.isFetching ? (
+          <div>Loading...</div>
+        ) : null}
         {schemaQuery.isError ? (
           <div>{schemaQuery.error.message}</div>
         ) : (
           <div className="flex flex-col">
-          <QueryBuilderHeader />
-          <div className="flex flex-row ">
-          <span>SELECT</span> <QueryBuilderMultiSelect tableData={tables} tableName={selectedTable}/> <span>FROM</span> <QueryBuilderSelect onSelect={(selectedTable: string) => setSelectedTable(selectedTable)} tableData={Object.keys(tables)}/>
-          </div>
-          <QueryBuilderJoin tableData={tables} tableName={selectedTable}/>
-          <Button>ADD NEW JOIN</Button>
+            <QueryBuilderHeader />
+            <div className="flex flex-row ">
+              <span>SELECT</span>{" "}
+              <QueryBuilderMultiSelect
+                tableData={tables}
+                tableName={selectedTable}
+              />{" "}
+              <span>FROM</span>{" "}
+              <QueryBuilderSelect
+                onSelect={(selectedTable: string) =>
+                  setSelectedTable(selectedTable)
+                }
+                tableData={Object.keys(tables)}
+              />
+            </div>
+            {Array(joinsCounter)
+              .fill(0)
+              .map((_, index) => (
+                <QueryBuilderJoin
+                  key={index}
+                  tableData={tables}
+                  tableName={selectedTable}
+                />
+              ))}
+            <Button
+              onClick={() => {
+                setJoinsCounter((count) => count + 1);
+              }}
+            >
+              ADD NEW JOIN
+            </Button>
           </div>
         )}
       </div>
