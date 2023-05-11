@@ -1,3 +1,5 @@
+import { api } from "~/utils/api";
+
 const QueryBuilderHeader: React.FC = () => {
   return (
     <div className="flex flex-row min-w-max">
