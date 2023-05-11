@@ -4,9 +4,15 @@ import Login from "../../components/login/login";
 import { useMemo, useState } from "react";
 import { api } from "~/utils/api";
 import { pipe, groupBy } from "remeda";
+import { Button } from "@mui/material";
+import QueryBuilderHeader from "~/components/query-builder-header/query-builder-header";
+import QueryBuilderJoin from "~/components/query-builder-join/query-builder-join";
+import QueryBuilderMultiSelect from "~/components/query-builder-multiselect/query-builder-multiselect";
+import QueryBuilderSelect from "~/components/query-builder-select/query-builder-select";
 
 const Postgresql: NextPage = () => {
   const [connectionString, setConnectionString] = useState("");
+  const [selectedTable, setSelectedTable] = useState("");
 
   const schemaQuery = api.postgressql.getSchema.useQuery(connectionString, {
     enabled: Boolean(connectionString),
@@ -36,20 +42,14 @@ const Postgresql: NextPage = () => {
         {schemaQuery.isError ? (
           <div>{schemaQuery.error.message}</div>
         ) : (
-          <ul>
-            {Object.keys(tables).map((tableName) => (
-              <li key={tableName}>
-                <strong>{tableName}</strong>
-                <ul>
-                  {tables[tableName]!.map((column) => (
-                    <li key={column.column_name}>
-                      {column.column_name}: {column.udt_name}
-                    </li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-col">
+          <QueryBuilderHeader />
+          <div className="flex flex-row ">
+          <span>SELECT</span> <QueryBuilderMultiSelect tableData={tables} tableName={selectedTable}/> <span>FROM</span> <QueryBuilderSelect onSelect={(selectedTable: string) => setSelectedTable(selectedTable)} tableData={Object.keys(tables)}/>
+          </div>
+          <QueryBuilderJoin tableData={tables} tableName={selectedTable}/>
+          <Button>ADD NEW JOIN</Button>
+          </div>
         )}
       </div>
     </Layout>
