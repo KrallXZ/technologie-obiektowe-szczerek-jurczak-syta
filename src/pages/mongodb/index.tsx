@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import Layout from "../../components/layout/layout";
-import Login from "../../components/login/login";
+import LoginMongoDB from "~/components/login/login-mongodb";
 
 const Mongodb: NextPage = () => {
   return (
@@ -10,7 +10,7 @@ const Mongodb: NextPage = () => {
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             MongoDB
           </h1>
-          <Login />
+          <LoginMongoDB />
         </div>
       </Layout>
     </>
