@@ -20,33 +20,44 @@ interface Database {
   "information_schema.columns": ColumnsTable;
 }
 
+const createDb = (connectionString: string) => {
+  const db = new Kysely<Database>({
+    dialect: new PostgresDialect({
+      // @ts-ignore
+      pool: new Pool({
+        connectionString: connectionString,
+      }),
+    }),
+  });
+
+  return db;
+};
+
 export const postgresqlRouter = createTRPCRouter({
   getSchema: publicProcedure.input(z.string()).query(async ({ input }) => {
-    const db = new Kysely<Database>({
-      dialect: new PostgresDialect({
-        pool: new Pool({
-          connectionString: input,
-        }),
-      }),
-    });
+    try {
+      const db = createDb(input);
 
-    const res = await db
-      .selectFrom("information_schema.tables")
-      .innerJoin(
-        "information_schema.columns",
-        "information_schema.tables.table_name",
-        "information_schema.columns.table_name"
-      )
-      .select([
-        "information_schema.tables.table_name",
-        "information_schema.columns.column_name",
-        "information_schema.columns.udt_name",
-      ])
-      .where("information_schema.tables.table_schema", "=", "public")
-      .where("information_schema.columns.table_schema", "=", "public")
-      .execute();
+      const res = await db
+        .selectFrom("information_schema.tables")
+        .innerJoin(
+          "information_schema.columns",
+          "information_schema.tables.table_name",
+          "information_schema.columns.table_name"
+        )
+        .select([
+          "information_schema.tables.table_name",
+          "information_schema.columns.column_name",
+          "information_schema.columns.udt_name",
+        ])
+        .where("information_schema.tables.table_schema", "=", "public")
+        .where("information_schema.columns.table_schema", "=", "public")
+        .execute();
 
-    return res;
+      return res;
+    } catch (e) {
+      throw e;
+    }
   }),
 });
 
