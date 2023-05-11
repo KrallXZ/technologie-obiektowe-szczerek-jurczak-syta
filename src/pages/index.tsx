@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
 import React from "react";
-import Layout from "../../components/layout/layout";
+import Layout from "../components/layout/layout";
 import Link from "next/link";
 
 const Main: NextPage = () => {

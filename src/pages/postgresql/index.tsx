@@ -1,6 +1,6 @@
 import { type NextPage } from "next";
-import Layout from "../../../components/layout/layout";
-import Login from "../../../components/login/login";
+import Layout from "../../components/layout/layout";
+import Login from "../../components/login/login";
 
 const Postgresql: NextPage = () => {
   return (
