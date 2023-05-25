@@ -2,29 +2,77 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { MongoClient } from "mongodb";
 
-export const mongodbRouter = createTRPCRouter({
-  connect: publicProcedure.input(z.object({
-    connectionString: z.string(),
-    databaseName: z.string(),
-    collectionName: z.string(),
-  })).query(async ({input: {connectionString, collectionName, databaseName}}) => {
-    console.log(connectionString);
-
+const getClient = async (connectionString: string) =>  {
     const client = new MongoClient(connectionString);
-    try {
+    const connection = await client.connect();
 
-    await client.connect();
+  return connection;
+}
+
+const getDatabase = async (connectionString: string, databaseName: string) =>  {
+    const client = await getClient(connectionString);
+
+    if (!client) {
+      throw new Error("No client");
+    }
+
+    return client.db(databaseName)
+
+}
+
+export const mongodbRouter = createTRPCRouter({
+  getDatabaseList: publicProcedure.input(z.string()).query(async ({ input: connectionString }) => {
+    try {
+      const client = await getClient(connectionString)
+      return client.db().admin().listDatabases();
     } catch (error) {
       console.log(error);
     }
-    console.log('Connected successfully to server');
-    const db = client.db(databaseName);
-    const collection = db.collection(collectionName);
-    console.log(collection);
+  }),
 
-    const findResult = await collection.find({}).toArray();
-    console.log('Found documents =>', findResult);
-    return findResult;
+  getCollectionList: publicProcedure.input(z.object({
+    connectionString: z.string(),
+    databaseName: z.string(),
+  })).query(async ({  input: { connectionString, databaseName } }) => {
+    try {
+      const db = await getDatabase(connectionString, databaseName);
+
+      return db.listCollections().toArray();
+    } catch (error) {
+      console.log(error);
+    }
+  }),
+
+  getDatabaseResults: publicProcedure.input(z.object({
+    connectionString: z.string(),
+    databaseName: z.string(),
+    collectionName: z.string(),
+  })).query(async ({ input: { connectionString, collectionName, databaseName } }) => {
+    try {
+      const db = await getDatabase(connectionString, databaseName);
+      const collection = db.collection(collectionName);
+
+      return collection.find().toArray();
+    } catch (error) {
+      console.log(error);
+    }
+  }),
+
+  getSpecificDatabaseResults: publicProcedure.input(z.object({
+    connectionString: z.string(),
+    databaseName: z.string(),
+    collectionName: z.string(),
+    filterName: z.string().optional(),
+    filterValue: z.string().optional(),
+  })).query(async ({ input: { connectionString, collectionName, databaseName, filterName, filterValue } }) => {
+    try {
+      const db = await getDatabase(connectionString, databaseName);
+      const collection = db.collection(collectionName);
+
+      return collection.find({ filterName: filterValue }).toArray();
+    } catch (error) {
+      console.log(error);
+    }
   }),
 });
 

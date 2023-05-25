@@ -18,6 +18,8 @@
     "@trpc/next": "^10.18.0",
     "@trpc/react-query": "^10.18.0",
     "@trpc/server": "^10.18.0",
+    "cypher-query-builder": "^6.0.4",
+    "kysely": "^0.24.2",
     "mongodb": "5.4",
     "kysely": "^0.24.2",
     "next": "^13.3.0",

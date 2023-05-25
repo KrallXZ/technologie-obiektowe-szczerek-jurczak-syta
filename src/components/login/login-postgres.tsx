@@ -2,7 +2,7 @@ import { Button, TextField } from "@mui/material";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
 import { useState } from "react";
 
-const Login: React.FC<{
+const LoginPostgres: React.FC<{
   onSave: (connectionString: string) => void;
 }> = ({ onSave }) => {
   const [connectionString, setConnectionString] = useState("");
@@ -37,4 +37,4 @@ const Login: React.FC<{
   );
 };
 
-export default Login;
+export default LoginPostgres;

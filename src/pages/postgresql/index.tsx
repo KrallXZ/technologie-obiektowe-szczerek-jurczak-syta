@@ -1,9 +1,9 @@
 import { type NextPage } from "next";
 import Layout from "../../components/layout/layout";
-import Login from "../../components/login/login";
+import LoginPostgres from "../../components/login/login-postgres";
 import { useMemo, useState } from "react";
 import { api } from "~/utils/api";
-import { pipe, groupBy } from "remeda";
+import { groupBy, pipe } from "remeda";
 import { Button } from "@mui/material";
 import QueryBuilderHeader from "~/components/query-builder-header/query-builder-header";
 import QueryBuilderJoin from "~/components/query-builder-join/query-builder-join";
@@ -34,7 +34,7 @@ const Postgresql: NextPage = () => {
         <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
           PostgreSQL
         </h1>
-        <Login
+        <LoginPostgres
           onSave={(connectionString) => {
             setConnectionString(connectionString);
           }}
