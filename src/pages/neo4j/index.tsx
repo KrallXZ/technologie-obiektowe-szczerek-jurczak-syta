@@ -1,5 +1,6 @@
 import { type NextPage } from "next";
 import Layout from "../../components/layout/layout";
+import LoginNeo4j from "~/components/login/login-neo4j";
 
 const Neo4j: NextPage = () => {
   return (
@@ -9,6 +10,7 @@ const Neo4j: NextPage = () => {
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             Neo4j
           </h1>
+          <LoginNeo4j/>
         </div>
       </Layout>
     </>

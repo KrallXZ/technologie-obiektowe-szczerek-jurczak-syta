@@ -2,6 +2,7 @@ import { createTRPCRouter } from "~/server/api/trpc";
 import { exampleRouter } from "~/server/api/routers/example";
 import { postgresqlRouter } from "./routers/postgresql/postgresql";
 import { mongodbRouter } from "~/server/api/routers/mongodb/mongodb";
+import { neo4jRouter } from "~/server/api/routers/neo4j/neo4j";
 
 /**
  * This is the primary router for your server.
@@ -12,6 +13,7 @@ export const appRouter = createTRPCRouter({
     example: exampleRouter,
     postgressql: postgresqlRouter,
     mongodb: mongodbRouter,
+    neo4j: neo4jRouter,
 });
 
 // export type definition of API
