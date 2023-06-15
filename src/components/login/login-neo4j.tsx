@@ -15,15 +15,13 @@ const LoginNeo4j: React.FC = () => {
 
   const router = useRouter();
 
-  const connectToNeo4j =  () => {
+  const connectToNeo4j =  async () => {
      setIsEnabledQueryDatabase(true);
-    /*    await router.push({
+    await router.push({
       pathname: '/neo4j/query-details',
       query: {connectionString: connectionString, usernameValue: usernameValue, passwordValue: passwordValue, isEnabledQueryResults: true}
-    })*/
+    })
   }
-
-  console.log(queryDatabase.data);
 
   return (
     <>
@@ -46,8 +44,8 @@ const LoginNeo4j: React.FC = () => {
                    }}>
         </TextField>
 
-        <Button onClick={ () => {
-           connectToNeo4j();
+        <Button onClick={ async () => {
+          await connectToNeo4j();
         }} variant="outlined">
           Connect to
           database
