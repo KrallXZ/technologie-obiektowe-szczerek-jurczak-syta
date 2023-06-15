@@ -102,8 +102,6 @@ export const postgresqlRouter = createTRPCRouter({
 
         const result = await query.execute();
 
-        console.log(result)
-
         return result;
       }
     ),
