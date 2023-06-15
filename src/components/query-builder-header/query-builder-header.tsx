@@ -1,6 +1,6 @@
 const QueryBuilderHeader: React.FC = () => {
   return (
-    <div className="flex flex-row min-w-max">
+    <div className="flex flex-row min-w-max mb-5">
       <div className="flex flex-col">
         <h1 className="text-5xl">
           Query builder
