@@ -14,6 +14,7 @@
     "@mantine/hooks": "^6.0.13",
     "@mui/icons-material": "^5.11.16",
     "@mui/material": "^5.12.1",
+    "@mui/x-data-grid": "^6.7.0",
     "@tanstack/react-query": "^4.28.0",
     "@trpc/client": "^10.18.0",
     "@trpc/next": "^10.18.0",

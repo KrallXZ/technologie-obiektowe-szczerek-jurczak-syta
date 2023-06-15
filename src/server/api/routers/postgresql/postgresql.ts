@@ -98,9 +98,11 @@ export const postgresqlRouter = createTRPCRouter({
           withJoins
         );
 
-        const query = withWheres.select(selectedColumns);
+        const query = withWheres.select(selectedColumns.map((column) => `${column} as ${column}`));
 
         const result = await query.execute();
+
+        console.log(result)
 
         return result;
       }

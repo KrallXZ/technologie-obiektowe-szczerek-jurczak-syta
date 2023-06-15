@@ -11,6 +11,8 @@ import QueryBuilderMultiSelect from "~/components/query-builder-multiselect/quer
 import QueryBuilderSelect from "~/components/query-builder-select/query-builder-select";
 
 import { v4 as uuidv4 } from "uuid";
+import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+
 import QueryBuilderWhere from "~/components/query-builder-where/query-builder-where";
 
 type Join = {
@@ -46,7 +48,13 @@ const Postgresql: NextPage = () => {
   const queryResult = api.postgressql.executeQuery.useMutation();
 
   const onExecuteQuery = () => {
-    queryResult.mutate({ connectionString, selectedColumns, joins, wheres, tableName });
+    queryResult.mutate({
+      connectionString,
+      selectedColumns,
+      joins,
+      wheres,
+      tableName,
+    });
   };
 
   const tables = useMemo(() => {
@@ -57,6 +65,20 @@ const Postgresql: NextPage = () => {
       groupBy((table) => table.table_name)
     );
   }, [schemaQuery.data]);
+
+  const resultColumns: GridColDef[] = useMemo(
+    () =>
+      selectedColumns.map((column) => ({
+        field: column,
+        headerName: column,
+        width: 150,
+      })),
+    [selectedColumns]
+  );
+  const resultRows: GridRowsProp = useMemo(
+    () => queryResult.data?.map((row, index) => ({ ...row, id: index })) || [],
+    [queryResult.data]
+  );
 
   return (
     <Layout>
@@ -189,7 +211,7 @@ const Postgresql: NextPage = () => {
               {queryResult.isLoading ? (
                 <div>Loading...</div>
               ) : queryResult.data ? (
-                <div>{JSON.stringify(queryResult.data)}</div>
+                <DataGrid columns={resultColumns} rows={resultRows} />
               ) : null}
             </div>
           </div>
