@@ -86,6 +86,29 @@ export const neo4jRouter = createTRPCRouter({
         console.log(error);
       }
     }),
+
+  getDatabaseSpecificResults: publicProcedure
+    .input(
+      z.object({
+        connectionString: z.string(),
+        usernameValue: z.string(),
+        passwordValue: z.string(),
+        nodeName: z.string(),
+        nodeValue: z.string(),
+        filterValue: z.string()
+      })
+    )
+    .query(async ({ input: { connectionString, usernameValue, passwordValue, nodeName, nodeValue, filterValue } }) => {
+      try {
+        const db = new Connection(connectionString, {
+          username: usernameValue,
+          password: passwordValue,
+        });
+        return db.raw(`MATCH (item:${nodeName} {${nodeValue}: '${filterValue}'}) RETURN item`).run();
+      } catch (error) {
+        console.log(error);
+      }
+    }),
 });
 
 export type neo4jRouter = typeof neo4jRouter;
