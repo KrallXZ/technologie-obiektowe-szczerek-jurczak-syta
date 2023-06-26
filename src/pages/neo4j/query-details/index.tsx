@@ -25,21 +25,25 @@ const Neo4jQueryDetails: NextPage = () => {
   const selectSpecificResults = () => {
     setIsEnabledQuerySpecificResults(true);
   }
-
+  
   useEffect(() => {
     if (queryResults.data) {
+
+      let nodeDuplicatedPropertiesArray = [];
+      let nodePropertiesArray = [];
+
       queryResults.data.map((item: any) => {
         Object.entries(item).forEach(([keyItem, valueItem]) => {
           Object.entries(valueItem['properties']).forEach(([keyItemProperty, valueItemProperty]) => {
-            const nodePropertySet = new Set();
-            nodePropertySet.add(keyItemProperty);
-
-            const nodePropertiesArray = Array.from(nodePropertySet)
-
-            setNodePropertyArray(nodePropertyArray => [...nodePropertyArray, ...nodePropertiesArray])
+            nodeDuplicatedPropertiesArray.push(keyItemProperty);
           })
         });
       })
+      const nodePropertySet = new Set();
+      nodeDuplicatedPropertiesArray.forEach(propertyName => nodePropertySet.add(propertyName));
+
+      nodePropertiesArray = Array.from(nodePropertySet);
+      setNodePropertyArray(nodePropertiesArray);
     }
   }, [queryResults.data]);
 
