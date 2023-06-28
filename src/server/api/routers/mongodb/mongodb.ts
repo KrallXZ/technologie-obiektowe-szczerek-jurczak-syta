@@ -71,15 +71,15 @@ export const mongodbRouter = createTRPCRouter({
                 connectionString: z.string(),
                 databaseName: z.string(),
                 collectionName: z.string(),
-                filterName: z.string().optional(),
-                filterValue: z.any().optional(),
+                filters: z.array(z.object({ filterName: z.string(), filterValue: z.any() })),
             })
         )
-        .mutation(async ({ input: { connectionString, collectionName, databaseName, filterName, filterValue } }) => {
+        .mutation(async ({ input: { connectionString, collectionName, databaseName, filters } }) => {
             try {
                 const db = await getDatabase(connectionString, databaseName);
                 const collection = db.collection(collectionName);
-                return collection.find({ [filterName]: filterValue }).toArray();
+                const filter = filters.map((filter) => [filter.filterName, filter.filterValue]);
+                return collection.find(Object.fromEntries(filter)).toArray();
             } catch (error) {
                 console.log(error);
             }
