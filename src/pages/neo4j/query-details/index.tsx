@@ -2,13 +2,7 @@ import { type NextPage } from "next";
 import Layout from "~/components/layout/layout";
 import { useRouter } from "next/router";
 import React, { useEffect, useMemo } from "react";
-import {
-  InputLabel,
-  MenuItem,
-  Select,
-  type SelectChangeEvent,
-  TextField,
-} from "@mui/material";
+import { InputLabel, MenuItem, Select, type SelectChangeEvent, TextField } from "@mui/material";
 import { api } from "~/utils/api";
 import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
 
@@ -21,7 +15,7 @@ const Neo4jQueryDetails: NextPage = () => {
   const [nodeName, setNodeName] = React.useState("");
   const [nodeValue, setNodeValue] = React.useState("");
   const [filterValue, setFilterValue] = React.useState("");
-  const [columnsName, setColumnsName] = React.useState<string[]>([]);
+  const [specificRowValues, setSpecificRowValues] = React.useState<string[]>([]);
   const [rowValues, setRowValues] = React.useState<string[]>([]);
   const [nodePropertyArray, setNodePropertyArray] = React.useState([]);
 
@@ -54,7 +48,8 @@ const Neo4jQueryDetails: NextPage = () => {
 
   const onNodeNameChange = (event: SelectChangeEvent<typeof nodeName>) => {
     setNodeName(event.target.value);
-    selectNodeResults();
+    selectNodeResults(true);
+    setRowValues([]);
   };
 
   const onNodeValueChange = (event: SelectChangeEvent) => {
@@ -63,17 +58,20 @@ const Neo4jQueryDetails: NextPage = () => {
 
   const onFilterNameChange = (event: SelectChangeEvent<typeof filterValue>) => {
     setFilterValue(event.target.value);
-    if (event.target.value.length > 3) {
-      selectSpecificResults();
+    selectSpecificResults(true);
+    if (event.target.value == "") {
+      setSpecificRowValues([]);
+      selectNodeResults(true);
+      selectSpecificResults(false);
     }
   };
 
-  const selectNodeResults = () => {
-    setIsEnabledQueryNodeResults(true);
+  const selectNodeResults = (value) => {
+    setIsEnabledQueryNodeResults(value);
   };
 
-  const selectSpecificResults = () => {
-    setIsEnabledQuerySpecificResults(true);
+  const selectSpecificResults = (value) => {
+    setIsEnabledQuerySpecificResults(value);
   };
 
   useEffect(() => {
@@ -100,7 +98,6 @@ const Neo4jQueryDetails: NextPage = () => {
     }
   }, [queryResults.data]);
 
-  //TODO FIX THIS
   useEffect(() => {
     if (queryResults.data) {
       queryResults.data.map((item: any) => {
@@ -111,6 +108,17 @@ const Neo4jQueryDetails: NextPage = () => {
       });
     }
   }, [queryResults.data]);
+
+  useEffect(() => {
+    if (querySpecificResults.data) {
+      querySpecificResults.data.map((item: any) => {
+        Object.entries(item).forEach(([keyItem, valueItem]) => {
+          console.log(JSON.stringify(valueItem));
+          setSpecificRowValues((rowItems) => [...rowItems, valueItem]);
+        });
+      });
+    }
+  }, [querySpecificResults.data]);
 
   const resultColumns: GridColDef[] = useMemo(
     () =>
@@ -126,10 +134,12 @@ const Neo4jQueryDetails: NextPage = () => {
     [rowValues]
   );
 
-  console.log("rw", rowValues);
+  const specificResultRows: GridRowsProp = useMemo(
+    () => specificRowValues.map((row: any, index) => ({ id: index, ...row.properties })) || [],
+    [specificRowValues]
+  );
 
-  /*  console.log(resultColumns);
-  console.log(resultRows);*/
+  console.log(querySpecificResults.data?.length)
 
   return (
     <>
@@ -139,19 +149,9 @@ const Neo4jQueryDetails: NextPage = () => {
             Neo4j Query Builder
           </h1>
           <h2>All results:</h2>
-          <DataGrid columns={resultColumns} rows={resultRows}></DataGrid>
-          <ul>
-            {queryResults.data?.map((item: any) => {
-              return <li key={item.identity}>{JSON.stringify(item)}</li>;
-            })}
-          </ul>
 
-          <h2>Specific results:</h2>
-          <ul>
-            {querySpecificResults.data?.map((item: any) => {
-              return <li key={item.identity}>{JSON.stringify(item)}</li>;
-            })}
-          </ul>
+          {querySpecificResults.data?.length >= 1 ? <DataGrid columns={resultColumns} rows={specificResultRows}></DataGrid> : <DataGrid columns={resultColumns} rows={resultRows}></DataGrid>}
+
           <div>
             <InputLabel>Select node name</InputLabel>
             <Select
