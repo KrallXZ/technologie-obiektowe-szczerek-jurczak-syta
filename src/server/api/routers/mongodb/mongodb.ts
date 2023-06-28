@@ -72,7 +72,7 @@ export const mongodbRouter = createTRPCRouter({
                 databaseName: z.string(),
                 collectionName: z.string(),
                 filterName: z.string().optional(),
-                filterValue: z.string().optional(),
+                filterValue: z.any().optional(),
             })
         )
         .mutation(async ({ input: { connectionString, collectionName, databaseName, filterName, filterValue } }) => {
