@@ -1,145 +1,115 @@
 import { type NextPage } from "next";
 import Layout from "~/components/layout/layout";
 import { useRouter } from "next/router";
-import React, { useEffect, useMemo } from "react";
-import { InputLabel, MenuItem, Select, type SelectChangeEvent, TextField } from "@mui/material";
+import { useMemo, useState } from "react";
+import { Button, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 import { api } from "~/utils/api";
-import { DataGrid, type GridColDef, type GridRowsProp } from "@mui/x-data-grid";
+import { DataGrid } from "@mui/x-data-grid";
+
+import { v4 as uuidv4 } from "uuid";
+
+type Filter = {
+  id: string;
+  columnName: string;
+  value: string;
+};
 
 const Neo4jQueryDetails: NextPage = () => {
   const router = useRouter();
-  const [isEnabledQuerySpecificResults, setIsEnabledQuerySpecificResults] =
-    React.useState(false);
-  const [isEnabledQueryNodeResults, setIsEnabledQueryNodeResults] =
-    React.useState(false);
-  const [nodeName, setNodeName] = React.useState("");
-  const [nodeValue, setNodeValue] = React.useState("");
-  const [filterValue, setFilterValue] = React.useState("");
-  const [specificRowValues, setSpecificRowValues] = React.useState<string[]>([]);
-  const [rowValues, setRowValues] = React.useState<string[]>([]);
-  const [nodePropertyArray, setNodePropertyArray] = React.useState([]);
 
-  const {
-    connectionString,
-    usernameValue,
-    passwordValue,
-    isEnabledQueryResults,
-  } = router.query;
+  const [nodeName, setNodeName] = useState<string>("");
+
+  const [filters, setFilters] = useState<Filter[]>([
+    {
+      id: uuidv4(),
+      columnName: "",
+      value: "",
+    },
+  ]);
+
+  const { connectionString, usernameValue, passwordValue } = router.query as {
+    connectionString: string;
+    usernameValue: string;
+    passwordValue: string;
+  };
 
   const queryNodes = api.neo4j.getDatabaseNodes.useQuery(
-    { connectionString, usernameValue, passwordValue },
-    { enabled: Boolean(isEnabledQueryResults) }
+    {
+      connectionString,
+      usernameValue,
+      passwordValue,
+    },
+    {
+      initialData: [],
+    }
   );
-  const queryResults = api.neo4j.getDatabaseResults.useQuery(
-    { connectionString, usernameValue, passwordValue, nodeName },
-    { enabled: Boolean(isEnabledQueryNodeResults) }
-  );
-  const querySpecificResults = api.neo4j.getDatabaseSpecificResults.useQuery(
+
+  const allResults = api.neo4j.getDatabaseResults.useQuery(
     {
       connectionString,
       usernameValue,
       passwordValue,
       nodeName,
-      nodeValue,
-      filterValue,
+      filters: [],
     },
-    { enabled: Boolean(isEnabledQuerySpecificResults) }
+    {
+      initialData: [],
+      enabled: Boolean(nodeName),
+    }
   );
 
-  const onNodeNameChange = (event: SelectChangeEvent<typeof nodeName>) => {
-    setNodeName(event.target.value);
-    selectNodeResults(true);
-    setRowValues([]);
-  };
-
-  const onNodeValueChange = (event: SelectChangeEvent) => {
-    setNodeValue(event.target.value);
-  };
-
-  const onFilterNameChange = (event: SelectChangeEvent<typeof filterValue>) => {
-    setFilterValue(event.target.value);
-    selectSpecificResults(true);
-    if (event.target.value == "") {
-      setSpecificRowValues([]);
-      selectNodeResults(true);
-      selectSpecificResults(false);
+  const queryResults = api.neo4j.getDatabaseResults.useQuery(
+    {
+      connectionString,
+      usernameValue,
+      passwordValue,
+      nodeName,
+      filters,
+    },
+    {
+      initialData: [],
+      enabled: Boolean(nodeName),
     }
-  };
+  );
 
-  const selectNodeResults = (value) => {
-    setIsEnabledQueryNodeResults(value);
-  };
+  const allResultData = allResults.data;
+  const resultData = queryResults.data;
 
-  const selectSpecificResults = (value) => {
-    setIsEnabledQuerySpecificResults(value);
-  };
+  const allColumns = useMemo(
+    () => [
+      ...new Set(
+        allResultData
+          .map((resultItem) => Object.keys(resultItem.item.properties))
+          .flat()
+      ),
+    ],
+    [allResultData]
+  );
 
-  useEffect(() => {
-    if (queryResults.data) {
-      const nodeDuplicatedPropertiesArray = [];
-      let nodePropertiesArray = [];
-
-      queryResults.data.map((item: any) => {
-        Object.entries(item).forEach(([keyItem, valueItem]) => {
-          Object.entries(valueItem["properties"]).forEach(
-            ([keyItemProperty, valueItemProperty]) => {
-              nodeDuplicatedPropertiesArray.push(keyItemProperty);
-            }
-          );
-        });
-      });
-      const nodePropertySet = new Set();
-      nodeDuplicatedPropertiesArray.forEach((propertyName) =>
-        nodePropertySet.add(propertyName)
-      );
-
-      nodePropertiesArray = Array.from(nodePropertySet);
-      setNodePropertyArray(nodePropertiesArray);
-    }
-  }, [queryResults.data]);
-
-  useEffect(() => {
-    if (queryResults.data) {
-      queryResults.data.map((item: any) => {
-        Object.entries(item).forEach(([keyItem, valueItem]) => {
-          console.log(JSON.stringify(valueItem));
-          setRowValues((rowItems) => [...rowItems, valueItem]);
-        });
-      });
-    }
-  }, [queryResults.data]);
-
-  useEffect(() => {
-    if (querySpecificResults.data) {
-      querySpecificResults.data.map((item: any) => {
-        Object.entries(item).forEach(([keyItem, valueItem]) => {
-          console.log(JSON.stringify(valueItem));
-          setSpecificRowValues((rowItems) => [...rowItems, valueItem]);
-        });
-      });
-    }
-  }, [querySpecificResults.data]);
-
-  const resultColumns: GridColDef[] = useMemo(
+  const columns = useMemo(
     () =>
-      nodePropertyArray.map((column) => ({
-        field: column,
-        headerName: column,
+      [
+        ...new Set(
+          resultData
+            .map((resultItem) => Object.keys(resultItem.item.properties))
+            .flat()
+        ),
+      ].map((name) => ({
+        field: name,
+        headerName: name,
         width: 150,
       })),
-    [nodePropertyArray]
-  );
-  const resultRows: GridRowsProp = useMemo(
-    () => rowValues.map((row: any, index) => ({ id: index, ...row.properties })) || [],
-    [rowValues]
+    [resultData]
   );
 
-  const specificResultRows: GridRowsProp = useMemo(
-    () => specificRowValues.map((row: any, index) => ({ id: index, ...row.properties })) || [],
-    [specificRowValues]
+  const rows = useMemo(
+    () =>
+      resultData.map((item, index) => ({
+        ...item.item.properties,
+        id: index,
+      })),
+    [resultData]
   );
-
-  console.log(querySpecificResults.data?.length)
 
   return (
     <>
@@ -148,46 +118,114 @@ const Neo4jQueryDetails: NextPage = () => {
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             Neo4j Query Builder
           </h1>
-          <h2>All results:</h2>
+          <InputLabel>Select node name</InputLabel>
+          <Select
+            value={nodeName}
+            onChange={(event) => {
+              setNodeName(event.target.value);
+              setFilters([
+                {
+                  id: uuidv4(),
+                  columnName: "",
+                  value: "",
+                },
+              ]);
+            }}
+            sx={{ minWidth: 200 }}
+          >
+            {queryNodes.data?.map(({ label }) => (
+              <MenuItem key={label} value={label}>
+                {label}
+              </MenuItem>
+            ))}
+          </Select>
+          {nodeName ? (
+            <>
+              <h2>Results:</h2>
+              <DataGrid columns={columns} rows={rows} />
+            </>
+          ) : null}
 
-          {querySpecificResults.data?.length >= 1 ? <DataGrid columns={resultColumns} rows={specificResultRows}></DataGrid> : <DataGrid columns={resultColumns} rows={resultRows}></DataGrid>}
+          {nodeName ? (
+            <div>
+              <InputLabel>Filters</InputLabel>
+              {filters.map((filter) => (
+                <div key={filter.id}>
+                  <Select
+                    value={filter.columnName}
+                    placeholder={"Select node value"}
+                    onChange={(event) => {
+                      setFilters((filters) =>
+                        filters.map((_filter) => {
+                          if (filter.id === _filter.id) {
+                            return {
+                              ...filter,
+                              columnName: event?.target.value,
+                            };
+                          }
 
-          <div>
-            <InputLabel>Select node name</InputLabel>
-            <Select
-              value={nodeName}
-              onChange={onNodeNameChange}
-              sx={{ minWidth: 200 }}
-            >
-              {queryNodes.data?.map((resultNode) => (
-                <MenuItem key={resultNode} value={resultNode.label}>
-                  {resultNode.label}
-                </MenuItem>
+                          return _filter;
+                        })
+                      );
+                    }}
+                    sx={{ minWidth: 200 }}
+                  >
+                    {allColumns.map((column) => (
+                      <MenuItem key={column} value={column}>
+                        {column}
+                      </MenuItem>
+                    ))}
+                  </Select>
+
+                  <TextField
+                    variant="outlined"
+                    label="Filter value"
+                    value={filter.value}
+                    onChange={(event) => {
+                      setFilters((filters) =>
+                        filters.map((_filter) => {
+                          if (filter.id === _filter.id) {
+                            return {
+                              ...filter,
+                              value: event?.target.value,
+                            };
+                          }
+
+                          return _filter;
+                        })
+                      );
+                    }}
+                  />
+                  <Button
+                    onClick={() => {
+                      setFilters((filters) =>
+                        filters.filter(({ id }) => id !== filter.id)
+                      );
+                    }}
+                    variant="outlined"
+                    color="error"
+                  >
+                    Remove
+                  </Button>
+                </div>
               ))}
-            </Select>
-            <InputLabel>Select node property</InputLabel>
-            <Select
-              value={nodeValue}
-              placeholder={"Select node value"}
-              onChange={onNodeValueChange}
-              sx={{ minWidth: 200 }}
-            >
-              {nodePropertyArray.map((resultNodeProperty) => (
-                <MenuItem key={resultNodeProperty} value={resultNodeProperty}>
-                  {resultNodeProperty}
-                </MenuItem>
-              ))}
-            </Select>
-
-            <TextField
-              variant="outlined"
-              label="Filter value"
-              value={filterValue}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                onFilterNameChange(event);
-              }}
-            ></TextField>
-          </div>
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  setFilters((filters) => [
+                    ...filters,
+                    {
+                      id: uuidv4(),
+                      columnName: "",
+                      value: "",
+                    },
+                  ])
+                }
+              >
+                Add filter
+              </Button>
+            </div>
+          ) : null}
         </div>
       </Layout>
     </>

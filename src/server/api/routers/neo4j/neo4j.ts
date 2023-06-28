@@ -2,29 +2,12 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { Connection } from "cypher-query-builder";
 
+type Result = {
+  item: { labels: string[]; properties: { [key: string]: any } };
+}[];
+
 export const neo4jRouter = createTRPCRouter({
-    getDatabaseList: publicProcedure
-        .input(
-            z.object({
-                connectionString: z.string(),
-                usernameValue: z.string(),
-                passwordValue: z.string(),
-            })
-        )
-        .query(async ({ input: { connectionString, usernameValue, passwordValue } }) => {
-            try {
-                const db = new Connection(connectionString, {
-                    username: usernameValue,
-                    password: passwordValue,
-                });
-
-                return db;
-            } catch (error) {
-                console.log(error);
-            }
-        }),
-
-  getDatabaseNodes: publicProcedure
+  getDatabaseList: publicProcedure
     .input(
       z.object({
         connectionString: z.string(),
@@ -32,14 +15,14 @@ export const neo4jRouter = createTRPCRouter({
         passwordValue: z.string(),
       })
     )
-    .query(async ({ input: { connectionString, usernameValue, passwordValue } }) => {
+    .query(({ input: { connectionString, usernameValue, passwordValue } }) => {
       try {
         const db = new Connection(connectionString, {
           username: usernameValue,
           password: passwordValue,
         });
 
-        return db.raw("call db.labels()").run();
+        return db;
       } catch (error) {
         console.log(error);
       }
@@ -53,16 +36,20 @@ export const neo4jRouter = createTRPCRouter({
         passwordValue: z.string(),
       })
     )
-    .query(async ({ input: { connectionString, usernameValue, passwordValue } }) => {
+    .query(({ input: { connectionString, usernameValue, passwordValue } }) => {
       try {
         const db = new Connection(connectionString, {
           username: usernameValue,
           password: passwordValue,
         });
 
-        return db.raw("call db.labels()").run();
+        return db.raw("call db.labels()").run() as unknown as {
+          label: string;
+        }[];
       } catch (error) {
         console.log(error);
+
+        return [];
       }
     }),
 
@@ -73,42 +60,43 @@ export const neo4jRouter = createTRPCRouter({
         usernameValue: z.string(),
         passwordValue: z.string(),
         nodeName: z.string(),
+        filters: z.array(
+          z.object({ columnName: z.string(), value: z.string() })
+        ),
       })
     )
-    .query(async ({ input: { connectionString, usernameValue, passwordValue, nodeName } }) => {
-      try {
-        const db = new Connection(connectionString, {
-          username: usernameValue,
-          password: passwordValue,
-        });
-        return db.matchNode("item", nodeName).return("item").run();
-      } catch (error) {
-        console.log(error);
-      }
-    }),
+    .query(
+      ({
+        input: {
+          connectionString,
+          usernameValue,
+          passwordValue,
+          nodeName,
+          filters,
+        },
+      }) => {
+        try {
+          const db = new Connection(connectionString, {
+            username: usernameValue,
+            password: passwordValue,
+          });
 
-  getDatabaseSpecificResults: publicProcedure
-    .input(
-      z.object({
-        connectionString: z.string(),
-        usernameValue: z.string(),
-        passwordValue: z.string(),
-        nodeName: z.string(),
-        nodeValue: z.string(),
-        filterValue: z.string()
-      })
-    )
-    .query(async ({ input: { connectionString, usernameValue, passwordValue, nodeName, nodeValue, filterValue } }) => {
-      try {
-        const db = new Connection(connectionString, {
-          username: usernameValue,
-          password: passwordValue,
-        });
-        return db.raw(`MATCH (item:${nodeName} {${nodeValue}: '${filterValue}'}) RETURN item`).run();
-      } catch (error) {
-        console.log(error);
+          const conditions = Object.fromEntries(
+            filters
+              .filter((filter) => filter.columnName !== "")
+              .map((filter) => [filter.columnName, filter.value])
+          );
+
+          const query = db
+            .matchNode("item", nodeName, conditions)
+            .return("item");
+
+          return query.run() as unknown as Result;
+        } catch (error) {
+          return [];
+        }
       }
-    }),
+    ),
 });
 
 export type neo4jRouter = typeof neo4jRouter;
