@@ -147,10 +147,10 @@ const Neo4jQueryDetails: NextPage = () => {
           ) : null}
 
           {nodeName ? (
-            <div>
+            <div className="flex-col items-center flex gap-2">
               <InputLabel>Filters</InputLabel>
               {filters.map((filter) => (
-                <div key={filter.id}>
+                <div className="flex gap-2" key={filter.id}>
                   <Select
                     value={filter.columnName}
                     placeholder={"Select node value"}
